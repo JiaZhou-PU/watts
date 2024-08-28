@@ -55,7 +55,7 @@ class PluginALEAF(Plugin):
         # Load the Excel file and modify the 'Fuel' sheet
         fuel_data = self.renderer(params)
 
-        with pd.ExcelWriter(modified_input_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+        with pd.ExcelWriter(modified_input_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             fuel_sheet = pd.read_excel(writer, sheet_name='Fuel')
             fuel_sheet.update(fuel_data)
             fuel_sheet.to_excel(writer, sheet_name='Fuel', index=False)
@@ -64,7 +64,7 @@ class PluginALEAF(Plugin):
         for sheet_name, template_path in self.extra_templates.items():
             template_renderer = TemplateRenderer(template_path)
             sheet_data = template_renderer(params)
-            with pd.ExcelWriter(modified_input_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            with pd.ExcelWriter(modified_input_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                 sheet_data.to_excel(writer, sheet_name=sheet_name, index=False)
 
     def run(self):
