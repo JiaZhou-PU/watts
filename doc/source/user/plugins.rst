@@ -537,7 +537,20 @@ reported by :attr:`~watts.ResultsACCERT.escalated_dollar_year`::
     accert_result.total_OCC_per_kW
 
 The full summary these values come from is available as
-:attr:`~watts.ResultsACCERT.occ_table`.
+:attr:`~watts.ResultsACCERT.occ_table`. Note that ACCERT only writes this
+summary when the input file asks for it with::
+
+    post_process { occ = true }
+
+For its fusion reference models (``large_tokamak`` and ``stellarator``), ACCERT
+additionally computes the levelized cost of electricity in $/MWh::
+
+    accert_result.lcoe
+    accert_result.lcoe_table
+
+where :attr:`~watts.ResultsACCERT.lcoe_table` breaks the total down into the
+capital, operation and maintenance, fuel, waste disposal and decommissioning
+contributions.
 
 GCMat Plugin
 ++++++++++++

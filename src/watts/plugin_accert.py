@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2025 UChicago Argonne, LLC
 # SPDX-License-Identifier: MIT
 
+import math
 from pathlib import Path
 import re
 import sys
@@ -86,6 +87,10 @@ class ResultsACCERT(Results):
         ACCERT results of cost elements affected by user-defined variables
     occ_table
         ACCERT overnight capital cost (OCC) summary
+    lcoe_table
+        ACCERT breakdown of the levelized cost of electricity
+    lcoe
+        Levelized cost of electricity in $/MWh
     total_cost
         ACCERT results of total cost
     total_calculated_direct_cost
@@ -129,6 +134,7 @@ class ResultsACCERT(Results):
     _AFFECTED_COST_ELEMENT_FILES = (
         '*_aff_ce_*.csv', '*_variable_affected_cost_elements.xlsx')
     _OCC_FILES = ('*_post_*.csv',)
+    _LCOE_FILES = ('*_LCOE_results.xlsx',)
 
     def _output_file(self, patterns) -> Optional[Path]:
         """Return most recent output file matching the first pattern that hits
@@ -211,6 +217,22 @@ class ResultsACCERT(Results):
                 '"post_process { occ = true }".')
         return self._read_table(
             self._OCC_FILES, 'overnight capital cost summary').set_index('metric')
+
+    @property
+    def lcoe_table(self) -> pd.DataFrame:
+        """Levelized cost of electricity breakdown, indexed by variable
+
+        ACCERT calculates the levelized cost of electricity for its fusion
+        reference models only.
+        """
+        return self._read_table(
+            self._LCOE_FILES, 'levelized cost of electricity breakdown'
+        ).set_index('Variable')
+
+    @property
+    def lcoe(self) -> float:
+        """Levelized cost of electricity in $/MWh"""
+        return float(self.lcoe_table.at['coe', 'Value'])
 
     @property
     def total_cost(self) -> float:
@@ -330,4 +352,13 @@ class ResultsACCERT(Results):
     def total_OCC_per_kW(self) -> float:
         table = self.occ_table
         column = self._escalated_column(table, 'dollar_per_kw')
-        return float(table.at['total_OCC', column])
+        value = float(table.at['total_OCC', column])
+        if math.isnan(value):
+            # ACCERT leaves this column empty when the reference model does not
+            # define an electric power, which is the case for its fusion models
+            raise ValueError(
+                f'ACCERT did not report a cost per kW for the {self.ref_model} '
+                'reference model because the model does not define an electric '
+                'power output'
+            )
+        return value

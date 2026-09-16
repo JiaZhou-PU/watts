@@ -4,6 +4,7 @@
 from pathlib import Path
 import time
 
+import pandas as pd
 import pytest
 import watts
 
@@ -37,7 +38,10 @@ def make_results(outputs) -> watts.ResultsACCERT:
     output_files = []
     for name, contents in outputs.items():
         path = Path(name)
-        path.write_text(contents)
+        if isinstance(contents, pd.DataFrame):
+            contents.to_excel(path, index=False)
+        else:
+            path.write_text(contents)
         output_files.append(path)
     params = watts.Parameters(thermal_power=3000.0, electric_power=1000.0)
     return watts.ResultsACCERT(params, exec_info, [input_file], output_files)
@@ -105,6 +109,32 @@ def test_results_accert_legacy_output(run_in_tmpdir):
     assert results._output_file(results._COST_ELEMENT_FILES).suffix == '.xlsx'
 
 
+def test_results_accert_lcoe(run_in_tmpdir):
+    """The LCOE that ACCERT writes for fusion models should be read"""
+    # ACCERT leaves the cost per kW empty for fusion models because they do
+    # not define an electric power output
+    occ_table = OCC_TABLE.replace(',1250.0,2025', ',,2025') \
+        .replace(',761.25,2025', ',,2025').replace(',2011.25,2025', ',,2025') \
+        .replace(',402.25,2025', ',,2025').replace(',2413.5,2025', ',,2025')
+    lcoe_table = pd.DataFrame({
+        'Variable': ['coecap', 'coeoam', 'coe'],
+        'Description': ['Capital', 'O&M', 'Total cost of electricity ($/MWh)'],
+        'Value': [480.7, 20.9, 515.9],
+    })
+    results = make_results({
+        'large_tokamak_upd_acc_20250912_120000.csv': ACCOUNT_TABLE,
+        'large_tokamak_post_20250912_120000.csv': occ_table,
+        'large_tokamak_LCOE_results.xlsx': lcoe_table,
+    })
+
+    assert results.ref_model == 'large_tokamak'
+    assert results.lcoe == pytest.approx(515.9)
+    assert results.lcoe_table.at['coecap', 'Value'] == pytest.approx(480.7)
+    assert results.total_OCC_escalated == pytest.approx(2.4135e9)
+    with pytest.raises(ValueError, match='electric power'):
+        results.total_OCC_per_kW
+
+
 def test_results_accert_missing_output(run_in_tmpdir):
     results = make_results({})
     assert results.ref_model is None
@@ -114,3 +144,5 @@ def test_results_accert_missing_output(run_in_tmpdir):
         results.cost_element_table
     with pytest.raises(FileNotFoundError):
         results.affected_cost_element_table
+    with pytest.raises(FileNotFoundError):
+        results.lcoe_table

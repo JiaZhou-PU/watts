@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `total_OCC`), for the escalated cost (`total_OCC_escalated`,
   `total_OCC_per_kW`, `escalated_dollar_year`), and for the cost element
   tables (`cost_element_table`, `affected_cost_element_table`)
+* `ResultsACCERT.lcoe` and `ResultsACCERT.lcoe_table` for the levelized cost of
+  electricity that ACCERT computes for its fusion reference models
+* ACCERT examples for the AP1000 (`1App_ACCERT_AP1000`) and the large tokamak
+  fusion model (`1App_ACCERT_LargeTokamak`)
 
 ### Changes
 
