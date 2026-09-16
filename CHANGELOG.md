@@ -7,8 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+* `ResultsACCERT` properties for the overnight capital cost metrics
+  (`total_calculated_direct_cost`, `total_direct_cost`,
+  `total_indirect_costs`, `total_cost_without_owner`, `owner_cost`,
+  `total_OCC`), for the escalated cost (`total_OCC_escalated`,
+  `total_OCC_per_kW`, `escalated_dollar_year`), and for the cost element
+  tables (`cost_element_table`, `affected_cost_element_table`)
+
 ### Changes
 
+* `ResultsACCERT` reads the timestamped CSV output of ACCERT 2.0, falling back
+  to the spreadsheets written by earlier versions
 * Update ACCERT output name
   ([#120](https://github.com/watts-dev/watts/pull/120))
 
